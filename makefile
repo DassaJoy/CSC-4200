@@ -21,46 +21,46 @@ all: check_dependencies generate_ssl_certs $(TARGETS)
 
 # Check and Install Dependencies if Necessary
 check_dependencies:
-    @which apt-get > /dev/null && { \
-        echo "Updating package lists..."; \
-        sudo apt-get update; \
-        echo "Installing build-essential and libssl-dev..."; \
-        sudo apt-get install -y build-essential libssl-dev; \
-    } || { \
-        echo "apt-get not found. Please install build-essential and libssl-dev manually."; \
-    }
+	@which apt-get > /dev/null && { \
+		echo "Updating package lists..."; \
+		sudo apt-get update; \
+		echo "Installing build-essential and libssl-dev..."; \
+		sudo apt-get install -y build-essential libssl-dev; \
+	} || { \
+		echo "apt-get not found. Please install build-essential and libssl-dev manually."; \
+	}
 
 # Generate SSL Certificates
 generate_ssl_certs: | $(SSL_DIR)
-    @echo "Generating SSL certificates..."
-    openssl genpkey -algorithm RSA -out $(SSL_DIR)/server.key
-    openssl req -new -key $(SSL_DIR)/server.key -out $(SSL_DIR)/server.csr -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
-    openssl x509 -req -in $(SSL_DIR)/server.csr -signkey $(SSL_DIR)/server.key -out $(SSL_DIR)/server.crt
+	@echo "Generating SSL certificates..."
+	openssl genpkey -algorithm RSA -out $(SSL_DIR)/server.key
+	openssl req -new -key $(SSL_DIR)/server.key -out $(SSL_DIR)/server.csr -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+	openssl x509 -req -in $(SSL_DIR)/server.csr -signkey $(SSL_DIR)/server.key -out $(SSL_DIR)/server.crt
 
 # Ensure that obj, bin, and ssl_certs directories exist
 $(OBJ_DIR):
-    mkdir -p $(OBJ_DIR)
+	mkdir -p $(OBJ_DIR)
 
 $(BIN_DIR):
-    mkdir -p $(BIN_DIR)
+	mkdir -p $(BIN_DIR)
 
 $(SSL_DIR):
-    mkdir -p $(SSL_DIR)
+	mkdir -p $(SSL_DIR)
 
 # Build Server
 $(BIN_DIR)/server: $(OBJ_DIR)/server.o | $(BIN_DIR)
-    $(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Build Client
 $(BIN_DIR)/client: $(OBJ_DIR)/client.o
-    $(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Compile Source Files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
-    $(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Clean Up
 clean:
-    rm -rf $(OBJ_DIR) $(BIN_DIR) $(SSL_DIR)
+	rm -rf $(OBJ_DIR) $(BIN_DIR) $(SSL_DIR)
 
 .PHONY: all clean check_dependencies generate_ssl_certs
