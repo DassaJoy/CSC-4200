@@ -133,7 +133,7 @@ int main()
         communicate_server(sl);
     }
 
-    fclose(sock);
+    close(sock);
     SSL_free(sl);
     clean_openssl();
 
