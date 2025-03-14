@@ -24,7 +24,7 @@ void log_message(const char *mess)
 
     if (log_file)
     {
-        fprint(log_file, "%s\n", mess);
+        fprintf(log_file, "%s\n", mess);
         fclose(log_file);
     }
 
@@ -82,18 +82,18 @@ void configure(SSL_CTX *ctx)
     if(SSL_CTX_use_certificate_file(ctx, "ssl_certs/server.crt", SSL_FILETYPE_PEM) <= 0)
     {
         log_message("Unable to load the certificate file");
-        ERR_print_erros_fp(stderr);
+        ERR_print_error_fp(stderr);
         exit(EXIT_FAILURE);
     }
 
-    if(SSl_CTX_use_PrivateKey_file(ctx, "ssl_certs/server.key", SSL_FILETYPE_PEM) <= 0)
+    if(SSL_CTX_use_PrivateKey_file(ctx, "ssl_certs/server.key", SSL_FILETYPE_PEM) <= 0)
     {
         log_message("Unable to load the private key file");
         ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
     }
 
-    if(!SSL_CTX_chekc_private_key(ctx))
+    if(!SSL_CTX_check_private_key(ctx))
     {
         log_message("Private key does not match the public certificate");
         exit(EXIT_FAILURE);
@@ -136,7 +136,7 @@ int main()
     //Variables
     int sock, cl_sock;
     struct sockaddr_in add, cl_add;
-    sokelen_t cl_len = sizeof(cl_add);
+    sockelen_t cl_len = sizeof(cl_add);
     SSL_CTX *ctx;
     SSL *sl;
     pthread_t thread_id;
@@ -160,7 +160,7 @@ int main()
     add.sin_port = htons(PORT);
 
     //Binds the socket
-    if(blind(sock, (struct sockaddr*)&add, sizeof(add)) < 0)
+    if(bind(sock, (struct sockaddr*)&add, sizeof(add)) < 0)
     {
         perror("The bind has failed");
         close(sock);
@@ -181,7 +181,7 @@ int main()
     //This accpects incoming connections
     while(1)
     {
-        cl_sock = accept(sock, (struct sockadd*)&cl_add, &cl_len);
+        cl_sock = accept(sock, (struct sockaddr*)&cl_add, &cl_len);
         
         if(cl_sock < 0)
         {
