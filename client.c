@@ -109,7 +109,7 @@ int main()
     add.sin_addr.s_addr = inet_addr(SERVER_IP);
 
     //Connection to the server
-    if(connect(sock, (struct sockadd*)&add, sizeof(add)) < 0)
+    if(connect(sock, (struct sockaddr*)&add, sizeof(add)) < 0)
     {
         perror("Connection has failed");
         exit(EXIT_FAILURE);
@@ -133,7 +133,7 @@ int main()
         communicate_server(sl);
     }
 
-    close(sock);
+    fclose(sock);
     SSL_free(sl);
     clean_openssl();
 
