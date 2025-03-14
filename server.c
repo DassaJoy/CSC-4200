@@ -82,7 +82,7 @@ void configure(SSL_CTX *ctx)
     if(SSL_CTX_use_certificate_file(ctx, "ssl_certs/server.crt", SSL_FILETYPE_PEM) <= 0)
     {
         log_message("Unable to load the certificate file");
-        ERR_print_error_fp(stderr);
+        ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
     }
 
@@ -136,7 +136,7 @@ int main()
     //Variables
     int sock, cl_sock;
     struct sockaddr_in add, cl_add;
-    sockelen_t cl_len = sizeof(cl_add);
+    socklen_t cl_len = sizeof(cl_add);
     SSL_CTX *ctx;
     SSL *sl;
     pthread_t thread_id;
