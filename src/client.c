@@ -1,5 +1,6 @@
 // All Libraries
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h> // converts IP addresses between text and binary format; converts values between host and network byte order
