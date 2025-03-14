@@ -22,13 +22,14 @@ all: check_dependencies generate_ssl_certs $(TARGETS)
 # CHeck and Install Dependencies if NEcessary
 check_dependencies:
 	@which apt-get > /dev/null && { \
-		echo "Updating package lists..."; \
+	    echo "Updating package lists..."; \
 		sudo apt-get update; \
 		echo "Installing build-essential and libssl-dev..."; \
 		sudo apt-get install -y build-essential libssl-dev; \
 	} || { \
-			echo "apt-get not found. Please install build-essential and libssl-devmanually."; \
+		echo "apt-get not found. Please install build-essential and libssl-dev manually."; \
 	}
+
 
 # Generate SSL Certificates 
 generate_ssl_certs: | $(SSL_DIR)
