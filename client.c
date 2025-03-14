@@ -4,9 +4,9 @@
 #include <string.h>
 #include <arpa/inet.h> // converts IP addresses between text and binary format; converts values between host and network byte order
 #include <openssl/ssl.h> // provides cryptographic functions and Secure Sockets Layer / Transport Layer Security
-#include <openssl.err.h> // provides functions for handling and repoting OpenSSl errors
+#include <openssl/err.h> // provides functions for handling and repoting OpenSSl errors
 
-#define SERVER_IP "127.0.01"
+#define SERVER_IP "127.0.0.1"
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
@@ -66,7 +66,7 @@ void communicate_server(SSL *sl)
     fgets(size, sizeof(size), stdin);
 
     //This sends the message to server
-    SSL_write(sl, size, strlen(buffer));
+    SSL_write(sl, size, strlen(size));
 
     //Reads the server's response
     int byte = SSL_read(sl, size, sizeof(size));
@@ -95,7 +95,7 @@ int main()
     ctx = create();
 
     //Creates the socket
-    sock = socket(AF_INET, SOCK_STREM, 0);
+    sock = socket(AF_INET, SOCK_STREAM, 0);
 
     if(sock < 0)
     {
@@ -104,7 +104,7 @@ int main()
     }
 
     //sockaddr_in fields
-    add.sin_famaily = AF_INET;
+    add.sin_family = AF_INET;
     add.sin_port = htons(PORT);
     add.sin_addr.s_addr = inet_addr(SERVER_IP);
 
@@ -130,7 +130,7 @@ int main()
     }
     else
     {
-        communication_server(sl);
+        communicate_server(sl);
     }
 
     close(sock);

@@ -6,10 +6,30 @@
 #include <arpa/inet.h> // converts IP addresses between text and binary format; converts values between host and network byte order
 #include <openssl/ssl.h> // provides cryptographic functions and Secure Sockets Layer / Transport Layer Security
 #include <openssl/err.h> // provides functions for handling and repoting OpenSSl errors
+#include <pthread.h>
 
 #define PORT 8080
 #define MAX_CLIENTS 5
 #define BUFFER_SIZE 1024
+#define LOG_FILE "server.log"
+
+FILE *log_file;
+pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+//Function to log messages to a file
+void log_message(const char *mess)
+{
+    pthread_mutex_lock(&log_mutex);
+    log_file = fopen(LOG_FILE, "a");
+
+    if (log_file)
+    {
+        fprint(log_file, "%s\n", mess);
+        fclose(log_file);
+    }
+
+    pthread_mutex_unlock(&log_mutex);
+}
 
 //Function to start openssl
 /*
@@ -18,7 +38,7 @@
 */
 void start_openssl()
 {
-    SSL_load_erro_strings();
+    SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
 }
 
@@ -48,7 +68,7 @@ SSL_CTX *create()
 
     if(!ctx)
     {
-        perror("Not able to create SSL");
+        log_message("Failed to create the SSL context");
         ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
     }
@@ -59,62 +79,67 @@ SSL_CTX *create()
 //Function that configures SSL
 void configure(SSL_CTX *ctx)
 {
-    if(SSL_CTX_use-cerificate_file(ctx, "ssl_certs/server.crt", SSL_FILETYPE_PEM) <= 0)
+    if(SSL_CTX_use_certificate_file(ctx, "ssl_certs/server.crt", SSL_FILETYPE_PEM) <= 0)
     {
-        perror("Unable to load the cerificate file");
+        log_message("Unable to load the certificate file");
         ERR_print_erros_fp(stderr);
         exit(EXIT_FAILURE);
     }
 
     if(SSl_CTX_use_PrivateKey_file(ctx, "ssl_certs/server.key", SSL_FILETYPE_PEM) <= 0)
     {
-        perror("Unable to load the private key file");
-        ERR_print_errors_fp(stdeer);
+        log_message("Unable to load the private key file");
+        ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
     }
 
     if(!SSL_CTX_chekc_private_key(ctx))
     {
-        perror("Private key does not match the public cerificate file");
+        log_message("Private key does not match the public certificate");
         exit(EXIT_FAILURE);
     }
 }
 
 //Function that handles the client communication
-void client(SSL *sl)
+void *client(void *sl)
 {
     //Varibles
+    SSL *new_sl = (SSL *)sl;
     char size[BUFFER_SIZE];
     int byte;
 
     //Receives message from client
-    byte = SSL_read(sl, size, sizeof(size));
+    byte = SSL_read(new_sl, size, sizeof(size));
 
     if(byte <= 0)
     {
-        perror("SSL read has failed");
+        log_message("SSL read has failed");
+        ERR_print_errors_fp(stderr);
     }
     else
     {
         size[byte] = "\0";
+        log_message(size);
         printf("Received: %s\n", size);
 
         //Sends confirmation 
-        SSL_write(sl, "Message received!", strlen("Message received!"));
+        SSL_write(new_sl, "Message received!", strlen("Message received!"));
     }
 
-    SSL_shutdown(sl);
-    SSL_free(sl);
+    SSL_shutdown(new_sl);
+    SSL_free(new_sl);
+    pthread_exit(NULL);
 }
 
 int main()
 {
     //Variables
-    int sock, cl;
+    int sock, cl_sock;
     struct sockaddr_in add, cl_add;
     sokelen_t cl_len = sizeof(cl_add);
     SSL_CTX *ctx;
     SSL *sl;
+    pthread_t thread_id;
 
     //Launches OpenSSl
     start_openssl();
@@ -122,7 +147,7 @@ int main()
     configure(ctx);
 
     //Creates the socket
-    sock = socket(AF_INET, SOCK_STREM, 0);
+    sock = socket(AF_INET, SOCK_STREAM, 0);
 
     if(sock < 0)
      {
@@ -151,13 +176,14 @@ int main()
     }
 
     printf("Server is listening on port %d...\n", PORT);
+    log_message("Server has started");
 
     //This accpects incoming connections
     while(1)
     {
-        cl = accept(sock, (struct sockadd*)&cl_add, &cl_len);
+        cl_sock = accept(sock, (struct sockadd*)&cl_add, &cl_len);
         
-        if(cl < 0)
+        if(cl_sock < 0)
         {
             perror("Accpeting has failed");
             continue;
@@ -165,23 +191,31 @@ int main()
 
         //Creates SSL object
         sl = SSL_new(ctx);
-        SSL_set_fd(sl, cl);
+        SSL_set_fd(sl, cl_sock);
 
-    //Preforms SSL Handshake
-    /*
-        This is the process of establishing a secure, 
-        encrypted connection between client and server
-    */
-    if(SSl-accept(sl) <= 0)
-    {
-        perror("SSL handshake has failed");
-    }
-    else
-    {
-        client(sl);
-    }
+        //Preforms SSL Handshake
+        /*
+            This is the process of establishing a secure, 
+            encrypted connection between client and server
+        */
+        if(SSL_accept(sl) <= 0)
+        {
+            log_message("SSL handshake has failed");
+            ERR_print_errors_fp(stderr);
+            SSL_free(sl);
+            close(cl_sock);
+            continue;
+        }
+        
+        log_message("Client is connected");
 
-    close(cl);
+        // Create a new thread for each client
+        if(pthread_create(&thread_id, NULL, client, (void *)sl) != 0)
+        {
+            log_message("Failed to create thread");
+        }
+
+        pthread_detach(thread_id);
 
     }
 
@@ -189,6 +223,7 @@ int main()
     close(sock);
     SSL_CTX_free(ctx);
     clean_openssl();
+    pthread_mutex_destroy(&log_mutex);
 
     return 0;
 }
