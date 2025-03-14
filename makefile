@@ -20,7 +20,7 @@ OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 all: check_dependencies generate_ssl_certs $(TARGETS)
 
 # CHeck and Install Dependencies if NEcessary
-check_dependcies:
+check_dependencies:
 	@which apt-get > /dev/null && { \
 		echo "Updating package lists..."; \
 		sudo apt-get update; \
@@ -53,6 +53,10 @@ $(BIN_DIR)/server: $(OBJ_DIR)/server.o
 
 # Build Client
 $(BIN_DIR)/client: $(OBJ_DIR)/client.o
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# Compile Source Files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Clean Up
