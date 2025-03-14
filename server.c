@@ -118,7 +118,7 @@ void *client(void *sl)
     }
     else
     {
-        size[byte] = "\0";
+        size[byte] = '\0';
         log_message(size);
         printf("Received: %s\n", size);
 
